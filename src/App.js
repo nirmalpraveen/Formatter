@@ -1,47 +1,72 @@
-import React, { useState } from 'react';
-import './App.css';
+import React, { useState } from "react";
+import "./App.css";
+import { format as formatXML } from "xml-formatter";
+import xmlParser from 'fast-xml-parser';
+import Editor from '@monaco-editor/react';
 
 const App = () => {
-  const [unformattedJson, setUnformattedJson] = useState('');
-  const [formattedJson, setFormattedJson] = useState('');
+  const [inputText, setInputText] = useState("");
+  const [formattedText, setFormattedText] = useState("");
+  const [formatType, setFormatType] = useState("json");
 
   const handleConvert = () => {
     try {
-      const json = JSON.parse(unformattedJson);
-      setFormattedJson(JSON.stringify(json, null, 2));
+      if (formatType === 'json') {
+        const json = JSON.parse(inputText);
+        setFormattedText(JSON.stringify(json, null, 2));
+      } else if (formatType === 'xml') {
+        if (xmlParser.validate(inputText) === true) {
+          const formattedXml = formatXML(inputText);
+          setFormattedText(formattedXml);
+        } else {
+          setFormattedText('Invalid XML');
+        }
+      }
     } catch (error) {
-      setFormattedJson('Invalid JSON');
+      setFormattedText(`Invalid ${formatType.toUpperCase()}`);
     }
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(formattedJson);
-    alert('Formatted JSON copied to clipboard!');
+    navigator.clipboard.writeText(formattedText);
+    alert(`${formatType.toUpperCase()} copied to clipboard!`);
   };
 
   return (
     <div className="app">
-      <h1>Formatter</h1>
+      <header className="header">
+        <h1>Formatter</h1>
+      </header>
       <div className="formatter">
         <textarea
           className="input"
-          placeholder="Paste unformatted JSON here"
-          value={unformattedJson}
-          onChange={(e) => setUnformattedJson(e.target.value)}
+          placeholder={`Paste unformatted ${formatType.toUpperCase()} here`}
+          value={inputText}
+          onChange={(e) => setInputText(e.target.value)}
         />
+        <div className="centerArea">
+        {/* <select
+          className="format-select"
+          value={formatType}
+          onChange={(e) => setFormatType(e.target.value)}
+        >
+          <option value="json">JSON</option>
+          <option value="xml">XML</option>
+        </select> */}
         <button className="convert-button" onClick={handleConvert}>
           Convert
         </button>
+        </div>
         <textarea
           className="output"
-          placeholder="Formatted JSON will appear here"
-          value={formattedJson}
+          placeholder={`Formatted ${formatType.toUpperCase()} will appear here`}
+          value={formattedText}
           readOnly
         />
+        <button className="copy-button" onClick={handleCopy}>
+          Copy Formatted {formatType.toUpperCase()}
+        </button>
       </div>
-      <button className="copy-button" onClick={handleCopy}>
-        Copy Formatted JSON
-      </button>
     </div>
   );
 };
